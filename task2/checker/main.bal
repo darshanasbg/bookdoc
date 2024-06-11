@@ -2,6 +2,9 @@ import ballerina/http;
 import wso2/choreo.sendemail;
 import ballerina/io;
 import ballerina/mime;
+import ballerina/task;
+import ballerina/lang.runtime;
+import ballerina/time;
 // import thisarug/prettify;
 
 configurable string ENDPOINT_URL = ?;
@@ -17,23 +20,63 @@ sendemail:Client emailClient = check new ();
 
 public function main() returns error? {
 
-    Appointment[] aList = check getAppointments(doc, hospitals);
-    
-    string atable1 = generateFullAppoinmentTable(aList);
-    io:println("Full Appoinment Table: \n", atable1);
+    // Schedules the tasks to execute the job every second.
+    task:JobId id1 = check task:scheduleJobRecurByFrequency(
+                            new AppintmentJob(0, "1st Job"), 60);
 
-    string atable2 = generateAvailableAppoinmentTable(aList, "AVAILABLE");
+    // Waits for 30 seconds.
+    runtime:sleep(60000);
 
-    if (atable2.length()>0) {
-        io:println("Availble Appoinment Table: \n", atable2);
+    // Unschedules the jobs.
+    check task:unscheduleJob(id1);
+}
 
-        string emailSubject = "Open Appoinments";
-        string emailcontent = atable2;
+// Creates a job to be executed by the scheduler.
+class AppintmentJob {
 
-        string _ = check emailClient->sendEmail(email, emailSubject, emailcontent);
-        io:println("Successfully sent the email.");
-    } else {
-        io:println("No Availble Appoinments");
+    *task:Job;
+    int i = 1;
+    string jobIdentifier;
+
+    // Executes this function when the scheduled trigger fires.
+    public function execute() {
+        self.i += 1;
+        // io:println(self.jobIdentifier + ", MyCounter: ", self.i);
+
+        do {
+            // io:println("Doc: " + doc);
+            // io:println("Hospitals: " + hospitals.toString());
+
+	        Appointment[] aList = check getAppointments(doc, hospitals);
+
+            // string atable1 = generateFullAppoinmentTable(aList);
+            // io:println("Full Appoinment Table: \n", atable1);
+
+            string atable2 = generateAvailableAppoinmentTable(aList, "AVAILABLE");
+
+            if (atable2.length()>0) {
+                io:println("Availble Appoinment Table: \n", atable2);
+
+                string emailSubject = "Open Appoinments";
+                string emailcontent = atable2;
+
+                string _ = check emailClient->sendEmail(email, emailSubject, emailcontent);
+                io:println("Successfully sent the email.");
+            } else {
+                time:Utc currentUtc = time:utcNow();
+                time:Civil civil1 = time:utcToCivil(currentUtc);
+                string emailString = check time:civilToEmailString(civil1, time:PREFER_TIME_ABBREV);
+                // time:Zone? zone = time:getZone("Asia/Colombo");
+                io:println(emailString + ": No Availble Appoinments");
+            }
+        } on fail var e {
+        	io:println("Error occured: " + e.toString());
+        }
+    }
+
+    isolated function init(int i, string jobIdentifier) {
+        self.i = i;
+        self.jobIdentifier = jobIdentifier;
     }
 }
 
@@ -102,7 +145,7 @@ function convert(json jsonResp) returns Appointment[]|error {
             io:println("Error: Not a JSON array");
         }
     
-    io:println("Converted the json payload to a Appointment Record List.");
+    // io:println("Converted the json payload to a Appointment Record List.");
     return aList;
 }
 

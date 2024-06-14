@@ -12,6 +12,8 @@ configurable string key = ?;
 configurable string email = ?;
 configurable string doc = ?;
 configurable string[] hospitals = ?;
+configurable int interval = ?;
+
 
 // Create http client
 http:Client httpclient = check new (ENDPOINT_URL);
@@ -22,7 +24,7 @@ public function main() returns error? {
 
     // Schedules the tasks to execute the job every second.
     task:JobId id1 = check task:scheduleJobRecurByFrequency(
-                            new AppintmentJob(0, "1st Job"), 60);
+                            new AppintmentJob(0, "1st Job"), <decimal>interval);
 
     // Waits for 30 seconds.
     runtime:sleep(60000);

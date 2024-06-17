@@ -13,6 +13,7 @@ configurable string email = ?;
 configurable string doc = ?;
 configurable string[] hospitals = ?;
 configurable int interval = ?;
+configurable int timeout = ?;
 
 
 // Create http client
@@ -26,8 +27,8 @@ public function main() returns error? {
     task:JobId id1 = check task:scheduleJobRecurByFrequency(
                             new AppintmentJob(0, "1st Job"), <decimal>interval);
 
-    // Waits for 30 seconds.
-    runtime:sleep(60000);
+    // Waits till the timeout.
+    runtime:sleep(<decimal>timeout);
 
     // Unschedules the jobs.
     check task:unscheduleJob(id1);

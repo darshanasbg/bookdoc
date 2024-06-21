@@ -5,7 +5,6 @@ import ballerina/mime;
 import ballerina/task;
 import ballerina/lang.runtime;
 import ballerina/time;
-// import thisarug/prettify;
 
 configurable string ENDPOINT_URL = ?;
 configurable string key = ?;
@@ -115,10 +114,6 @@ function getData(string docCode, string hosCode) returns json|error {
         "x-ibm-client-id": key
     }, mime:APPLICATION_JSON);
     json jsonResponse = check hresponse.getJsonPayload();
-
-    // string prettified = prettify:prettify(jsonResponse);
-    // io:println(prettified);
-    // io:println(jsonResponse.toString());
 
     return jsonResponse;
 }
